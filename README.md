@@ -1,4 +1,9 @@
-# 1. Get your google credentials json
+# streamlit-google-auth
+
+`streamlit-google-auth` is a simple package to add google authentification in your streamlit app.  
+For that I use the google API, so you will need a google cloud account and to create credentials.  
+
+## 1. Get your google credentials json
 
 1. Go to google cloud
 2. Create an account and a project
@@ -10,11 +15,11 @@
 8. Add the URLs of your apps in both origins and redirect
 9. You should see a new row in OAuth 2.0 Client IDs where you can download the json
 
-# 2. Install the package
+## 2. Install the package
 
 `pip install streamlit-google-auth`
 
-# 3. login and logout
+## 3. login and logout
 
 The `login` function will first check the cookies if the user already exist.  
 And create a button that the user can use.
@@ -58,7 +63,7 @@ Once the login function run, session_state will have 3 new keys ,  and ``.
     - `avatar`
     - Note: you can request more when creating the google credentials json. The user will se what you are asking in the google login page.
 
-# check_cookies and get_authorization_url
+## 4. check_cookies and get_authorization_url
 
 If you want to implement the login in another way, you can use the `check_cookies` and `get_authorization_url` functions.  
 At the start of you app, you can call `check_cookies` and if the cookie exist, the user is automatically log.  
