@@ -1,0 +1,28 @@
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamlit-google-auth"
+version = "0.1.6"
+description = "Use Google authentification in streamlit"
+readme = "README.md"
+authors = [{ name = "Adrien Bouvais", email = "adrien.bouvais.pro@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["streamlit", "google", "authentification"]
+dependencies = [
+    "streamlit==1.32.0",
+    "extra-streamlit-components==0.1.71",
+    "pyjwt==2.8.0",
+    "google-auth-oauthlib==1.2.0",
+    "google-api-python-client==2.123.0"
+]
+requires-python = ">=3.9.7"
+
+[project.urls]
+Homepage = "https://github.com/MrBounty/streamlit-google-auth"
