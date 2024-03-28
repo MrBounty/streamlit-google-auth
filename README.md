@@ -21,7 +21,7 @@ For that I use the google API, so you will need a google cloud account and to cr
 
 ## 3. login and logout
 
-![Alt Text]([https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif](https://github.com/MrBounty/streamlit-google-auth/blob/main/example1.gif))
+![Alt Text](https://github.com/MrBounty/streamlit-google-auth/blob/main/example1.gif)
 
 The `login` function will first check the cookies if the user already exist.  
 And create a button that the user can use.
@@ -72,7 +72,7 @@ Once the login function run, session_state will have 3 new keys ,  and ``.
 
 ## 4. check_cookies, get_authorization_url and check_authentification
 
-![Alt Text]([https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif](https://github.com/MrBounty/streamlit-google-auth/blob/main/example2.gif))
+![Alt Text](https://github.com/MrBounty/streamlit-google-auth/blob/main/example2.gif)
 
 
 If you want to implement the login in another way, you can use the `check_cookies`, `get_authorization_url` and `check_authentification` functions.  
