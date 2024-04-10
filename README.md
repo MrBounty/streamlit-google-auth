@@ -28,12 +28,10 @@ This package provides a simple and easy-to-use integration of Google authenticat
     authenticator.check_authentification()
 
     # Display the login button if the user is not authenticated
-    if not st.session_state.get('connected', False):
-        authorization_url = authenticator.get_authorization_url()
-        st.markdown(f'[Login]({authorization_url})')
-        st.link_button('Login', authorization_url)
+    authenticator.login()
+    
     # Display the user information and logout button if the user is authenticated
-    else:
+    if not st.session_state['connected']:
         st.image(st.session_state['user_info'].get('picture'))
         st.write(f"Hello, {st.session_state['user_info'].get('name')}")
         st.write(f"Your email is {st.session_state['user_info'].get('email')}")
@@ -74,25 +72,23 @@ from streamlit_google_auth import Authenticate
 
 st.title('Streamlit Google Auth Example')
 
-if 'connected' not in st.session_state:
-    authenticator = Authenticate(
-        secret_credentials_path = 'google_credentials.json',
-        cookie_name='my_cookie_name',
-        cookie_key='this_is_secret',
-        redirect_uri = 'http://localhost:8501',
-    )
-    st.session_state["authenticator"] = authenticator
+authenticator = Authenticate(
+    secret_credentials_path = 'google_credentials.json',
+    cookie_name='my_cookie_name',
+    cookie_key='this_is_secret',
+    redirect_uri = 'http://localhost:8501',
+)
 
 # Catch the login event
-st.session_state["authenticator"].check_authentification()
+authenticator.check_authentification()
 
 # Create the login button
-st.session_state["authenticator"].login()
+authenticator.login()
 
 if st.session_state['connected']:
     st.image(st.session_state['user_info'].get('picture'))
     st.write('Hello, '+ st.session_state['user_info'].get('name'))
     st.write('Your email is '+ st.session_state['user_info'].get('email'))
     if st.button('Log out'):
-        st.session_state["authenticator"].logout()
+        authenticator.logout()
 ```
