@@ -1,81 +1,115 @@
+# Thanks mkhorasani for his authentification package that I used to build this 
+# https://github.com/mkhorasani/Streamlit-Authenticator
+
+import os
+import time
 import streamlit as st
 from typing import Literal
-from ._auth import _login, _get_authorization_url, _check_authentification
-from ._cookies import _logout, _check_cookies
+import google_auth_oauthlib.flow
+from googleapiclient.discovery import build
 
-def logout(cookie_name:str):
-    """
-    Logout the user by deleting the cookie and rerun the app
+from .cookie import CookieHandler
+
+class Authenticate:
+    def __init__(self, secret_credentials_path:str, redirect_uri: str, cookie_name: str, cookie_key: str, cookie_expiry_days: float=30.0):
+        st.session_state['connected'] = False
+        self.secret_credentials_path    =   secret_credentials_path
+        self.redirect_uri               =   redirect_uri
+        self.cookie_handler             =   CookieHandler(cookie_name,
+                                                          cookie_key,
+                                                          cookie_expiry_days)
+        
+    def get_authorization_url(self) -> str:
+        flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
+            self.secret_credentials_path, # replace with you json credentials from your google auth app
+            scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
+            redirect_uri=self.redirect_uri,
+        )
+
+        authorization_url, state = flow.authorization_url(
+                access_type="offline",
+                include_granted_scopes="true",
+            )
+        return authorization_url
+
+    def login(self, color:Literal['white', 'blue']='blue', justify_content: str="center") -> tuple:
+        if not st.session_state['connected']:
+            token = self.cookie_handler.get_cookie()
+            if token:
+                self.authentication_handler.execute_login(token=token)
+            time.sleep(0.7)
+            if not st.session_state['connected']:
+                flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
+                    self.secret_credentials_path, # replace with you json credentials from your google auth app
+                    scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
+                    redirect_uri=self.redirect_uri,
+                )
+
+                authorization_url, state = flow.authorization_url(
+                        access_type="offline",
+                        include_granted_scopes="true",
+                    )
+                
+
+                html_content = """<div style="display: flex; justify-content: p_justify_content;">
+<a href="p_authorization_url" target="_self" style="background-color: p_color_background; color: p_color_text; text-decoration: none; text-align: center; font-size: 16px; margin: 4px 2px; cursor: pointer; padding: 8px 12px; border-radius: 4px; display: flex; align-items: center;">
+    <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" alt="Google logo" style="margin-right: 8px; width: 26px; height: 26px; background-color: white; border: 2px solid white; border-radius: 4px;">
+    Sign in with Google
+</a>
+</div>"""
+                html_content = html_content.replace("p_justify_content", justify_content)
+                html_content = html_content.replace("p_authorization_url", authorization_url)
+                
+                if color == 'white':
+                    html_content = html_content.replace("p_color_background", "#ffffff")
+                    html_content = html_content.replace("p_color_text", "#000000")
+                else:
+                    html_content = html_content.replace("p_color_background", "#4285F4")
+                    html_content = html_content.replace("p_color_text", "#ffffff")
+
+                st.markdown(html_content, unsafe_allow_html=True)
+
+    def check_authentification(self):
+        if not st.session_state['connected']:
+            token = self.cookie_handler.get_cookie()
+            if token:
+                user_info = {
+                    'name': token['name'],
+                    'email': token['email'],
+                    'picture': token['picture'],
+                    'id': token['oauth_id']
+                }
+                st.session_state["connected"] = True
+                st.session_state["user_info"] = user_info
+                st.session_state["oauth_id"] = user_info.get("id")
+            time.sleep(0.7)
+            
+            if not st.session_state['connected']:
+                auth_code = st.query_params.get("code")
+                st.query_params.clear()
+                flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
+                    self.secret_credentials_path, # replace with you json credentials from your google auth app
+                    scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
+                    redirect_uri=self.redirect_uri,
+                )
+                if auth_code:
+                    flow.fetch_token(code=auth_code)
+                    credentials = flow.credentials
+                    user_info_service = build(
+                        serviceName="oauth2",
+                        version="v2",
+                        credentials=credentials,
+                    )
+                    user_info = user_info_service.userinfo().get().execute()
+
+                    self.cookie_handler.set_cookie(user_info.get("name"), user_info.get("email"), user_info.get("picture"), user_info.get("id"))
+                    st.session_state["connected"] = True
+                    st.session_state["oauth_id"] = user_info.get("id")
+                    st.session_state["user_info"] = user_info
     
-    cookie_name: str = 'my_cookie_name'
-        Name of the cookie"""
-    _logout(cookie_name)
-
-def login(secret_credentials_path:str, cookie_name:str, cookie_key:str, cookie_expiry_days:int, app_url:str, color:Literal['white', 'blue']='blue', justify_content:str="center"):
-    """
-    Check the cookies for authentication and display the Google button to login
-
-    secret_credentials_path: str = 'authentification/google_credentials.json'
-        Path to the secret credentials file from Google API
-
-    cookie_name: str = 'my_cookie_name'
-        Name of the cookie
-        
-    cookie_key: str = 'my_secret_key'
-        Secret key to encode the cookie
-        
-    cookie_expiry_days: int = 30
-        Expiry date of the cookie in days
-        
-    app_url: str = 'http://localhost:8501'
-        URL of the app to redirect to after authentication
-        
-    color: Literal['white', 'blue'] = 'blue'
-        Color of the Google button
-        
-    justify_content: str = 'center'
-        Justify content of the Google button"""
-    _login(secret_credentials_path, cookie_name, cookie_key, cookie_expiry_days, app_url, color, justify_content)
-
-def get_authorization_url(secret_credentials_path:str, app_url:str) -> str:
-    """
-    Get the authorization URL to redirect the user to Google authentication
-
-    secret_credentials_path: str = 'authentification/google_credentials.json'
-        Path to the secret credentials file from Google API
-
-    app_url: str = 'http://localhost:8501'
-        URL of the app to redirect to after authentication"""
-    return _get_authorization_url(secret_credentials_path, app_url)
-
-def check_cookies(cookie_name:str, cookie_key:str) -> bool:
-    """
-    Check the cookies for authentication and set the session state. 
-    Return True if the user is authenticated and False otherwise.
-
-    cookie_name: str = 'my_cookie_name'
-        Name of the cookie
-        
-    cookie_key: str = 'my_secret_key'
-        Secret key to encode the cookie"""
-    return _check_cookies(cookie_name, cookie_key)
-
-def check_authentification(secret_credentials_path:str, cookie_name:str, cookie_key:str, cookie_expiry_days:int, app_url:str):
-    """
-    Check the authentication of the user and set the session state
-
-    secret_credentials_path: str = 'authentification/google_credentials.json'
-        Path to the secret credentials file from Google API
-
-    cookie_name: str = 'my_cookie_name'
-        Name of the cookie
-        
-    cookie_key: str = 'my_secret_key'
-        Secret key to encode the cookie
-        
-    cookie_expiry_days: int = 30
-        Expiry date of the cookie in days
-        
-    app_url: str = 'http://localhost:8501'
-        URL of the app to redirect to after authentication"""
-    _check_authentification(secret_credentials_path, cookie_name, cookie_key, cookie_expiry_days, app_url)
+    def logout(self):
+        st.session_state['logout'] = True
+        st.session_state['name'] = None
+        st.session_state['username'] = None
+        st.session_state['connected'] = None
+        self.cookie_handler.delete_cookie()
