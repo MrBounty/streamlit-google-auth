@@ -58,7 +58,7 @@ class CookieHandler:
         Sets the re-authentication cookie.
         """
         self.exp_date = self._set_exp_date()
-        token = self._token_encode({'name': name, 'email': email, 'picture': picture, 'oauth_id': oauth_id})
+        token = self._token_encode(name, email, picture, oauth_id)
         self.cookie_manager.set(self.cookie_name, token,
                                 expires_at=datetime.now() + timedelta(days=self.cookie_expiry_days))
         
@@ -91,7 +91,7 @@ class CookieHandler:
             print(e)
             return False
         
-    def _token_encode(self, email: str) -> str:
+    def _token_encode(self, name : str, email: str, picture: str, oauth_id: str) -> str:
         """
         Encodes the contents of the re-authentication cookie.
 
@@ -100,5 +100,5 @@ class CookieHandler:
         str
             Cookie used for password-less re-authentication.
         """
-        return jwt.encode({'email': email,
+        return jwt.encode({'email': email, 'name': name, 'picture': picture, 'oauth_id': oauth_id,
             'exp_date': self.exp_date}, self.cookie_key, algorithm='HS256')

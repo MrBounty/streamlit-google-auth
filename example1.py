@@ -1,5 +1,5 @@
 import streamlit as st
-from src.streamlit_google_auth import Authenticate
+from streamlit_google_auth import Authenticate
 
 st.title('Streamlit Google Auth Example 1')
 

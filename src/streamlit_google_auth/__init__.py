@@ -79,6 +79,7 @@ class Authenticate:
                     'picture': token['picture'],
                     'id': token['oauth_id']
                 }
+                st.query_params.clear()
                 st.session_state["connected"] = True
                 st.session_state["user_info"] = user_info
                 st.session_state["oauth_id"] = user_info.get("id")
