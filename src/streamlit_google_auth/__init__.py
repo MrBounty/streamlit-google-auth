@@ -2,26 +2,37 @@
 # https://github.com/mkhorasani/Streamlit-Authenticator
 
 import os
+import json
 import time
 import streamlit as st
 from typing import Literal
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
+
 from .cookie import CookieHandler
 
 class Authenticate:
-    def __init__(self, secret_credentials_path:str, redirect_uri: str, cookie_name: str, cookie_key: str, cookie_expiry_days: float=30.0):
+    def __init__(self, redirect_uri:str, cookie_name: str, cookie_key: str, cookie_expiry_days: float=30.0):
         st.session_state['connected']   =   st.session_state.get('connected', False) 
-        self.secret_credentials_path    =   secret_credentials_path
+        self.secret_credentials_config  =   None
         self.redirect_uri               =   redirect_uri
         self.cookie_handler             =   CookieHandler(cookie_name,
                                                           cookie_key,
                                                           cookie_expiry_days)
-        
+
+    def load_credentials_from_json(self,secret_credentials_path:str):
+        with open(secret_credentials_path, "r") as json_file:
+            self.secret_credentials_config = json.load(json_file)
+
+
+    def load_credentials(self, secret_credentials_config:dict):
+        self.secret_credentials_config = secret_credentials_config
+
+
     def get_authorization_url(self) -> str:
-        flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-            self.secret_credentials_path, # replace with you json credentials from your google auth app
+        flow = google_auth_oauthlib.flow.Flow.from_client_config(
+            self.secret_credentials_config, # replace with you json credentials from your google auth app
             scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
             redirect_uri=self.redirect_uri,
         )
@@ -31,11 +42,12 @@ class Authenticate:
                 include_granted_scopes="true",
             )
         return authorization_url
+    
 
     def login(self, color:Literal['white', 'blue']='blue', justify_content: str="center") -> tuple:
         if not st.session_state['connected']:
-            flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-                self.secret_credentials_path, # replace with you json credentials from your google auth app
+            flow = google_auth_oauthlib.flow.Flow.from_client_config(
+                self.secret_credentials_config, # replace with you json credentials from your google auth app
                 scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
                 redirect_uri=self.redirect_uri,
             )
@@ -78,8 +90,8 @@ class Authenticate:
                 auth_code = st.query_params.get("code")
                 st.query_params.clear()
                 if auth_code:
-                    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-                        self.secret_credentials_path, # replace with you json credentials from your google auth app
+                    flow = google_auth_oauthlib.flow.Flow.from_client_config(
+                        self.secret_credentials_config, # replace with you json credentials from your google auth app
                         scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
                         redirect_uri=self.redirect_uri,
                     )
