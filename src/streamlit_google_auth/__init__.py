@@ -32,7 +32,7 @@ class Authenticate:
             )
         return authorization_url
 
-    def login(self, color:Literal['white', 'blue']='blue', justify_content: str="center") -> tuple:
+    def login(self, color:Literal['white', 'blue']='blue', justify_content: str="center", sidebar=False) -> tuple:
         if not st.session_state['connected']:
             flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
                 self.secret_credentials_path, # replace with you json credentials from your google auth app
@@ -53,8 +53,10 @@ class Authenticate:
     </a>
 </div>
 """
-
-            st.markdown(html_content, unsafe_allow_html=True)
+            if sidebar:
+                st.sidebar.markdown(html_content, unsafe_allow_html=True)
+            else:
+                st.markdown(html_content, unsafe_allow_html=True)
 
     def check_authentification(self):
         if not st.session_state['connected']:
