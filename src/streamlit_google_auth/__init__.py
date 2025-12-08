@@ -2,7 +2,6 @@
 # https://github.com/mkhorasani/Streamlit-Authenticator
 
 import os
-import time
 import streamlit as st
 from typing import Literal
 import google_auth_oauthlib.flow
@@ -60,28 +59,15 @@ class Authenticate:
 
     def check_authentification(self):
         if not st.session_state['connected']:
-            token = self.cookie_handler.get_cookie()
-            if token:
-                user_info = {
-                    'name': token['name'],
-                    'email': token['email'],
-                    'picture': token['picture'],
-                    'id': token['oauth_id']
-                }
+            # FIX: First check for OAuth code (PRIORITY)
+            # This prevents issues in stateless environments like Cloud Run
+            # where time.sleep() can cause race conditions
+            auth_code = st.query_params.get("code")
+            if auth_code:
                 st.query_params.clear()
-                st.session_state["connected"] = True
-                st.session_state["user_info"] = user_info
-                st.session_state["oauth_id"] = user_info.get("id")
-                return
-            
-            time.sleep(0.3)
-            
-            if not st.session_state['connected']:
-                auth_code = st.query_params.get("code")
-                st.query_params.clear()
-                if auth_code:
+                try:
                     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-                        self.secret_credentials_path, # replace with you json credentials from your google auth app
+                        self.secret_credentials_path,
                         scopes=["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
                         redirect_uri=self.redirect_uri,
                     )
@@ -99,10 +85,28 @@ class Authenticate:
                     st.session_state["user_info"] = user_info
                     self.cookie_handler.set_cookie(user_info.get("name"), user_info.get("email"), user_info.get("picture"), user_info.get("id"))
                     st.rerun()
+                except Exception:
+                    # If code processing fails, continue to cookie check
+                    pass
+                return
+            
+            # Then check cookie (only if no code)
+            token = self.cookie_handler.get_cookie()
+            if token:
+                user_info = {
+                    'name': token['name'],
+                    'email': token['email'],
+                    'picture': token['picture'],
+                    'id': token['oauth_id']
+                }
+                st.session_state["connected"] = True
+                st.session_state["user_info"] = user_info
+                st.session_state["oauth_id"] = user_info.get("id")
+                return
     
     def logout(self):
         st.session_state['logout'] = True
         st.session_state['name'] = None
         st.session_state['username'] = None
-        st.session_state['connected'] = None
+        st.session_state['connected'] = False  # FIX: Should be False, not None
         self.cookie_handler.delete_cookie()
