@@ -83,8 +83,8 @@ class Authenticate:
                     st.session_state["oauth_id"] = user_info.get("id")
                     st.session_state["user_info"] = user_info
                     self.cookie_handler.set_cookie(user_info.get("name"), user_info.get("email"), user_info.get("picture"), user_info.get("id"))
-                    # st.rerun() # Removed to allow cookie to be saved in browser
                 except Exception:
+
                     # If code processing fails, continue to cookie check
                     pass
                 return
