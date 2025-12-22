@@ -61,7 +61,6 @@ class Authenticate:
         if not st.session_state['connected']:
             # FIX: First check for OAuth code (PRIORITY)
             # This prevents issues in stateless environments like Cloud Run
-            # where time.sleep() can cause race conditions
             auth_code = st.query_params.get("code")
             if auth_code:
                 st.query_params.clear()
@@ -84,7 +83,6 @@ class Authenticate:
                     st.session_state["oauth_id"] = user_info.get("id")
                     st.session_state["user_info"] = user_info
                     self.cookie_handler.set_cookie(user_info.get("name"), user_info.get("email"), user_info.get("picture"), user_info.get("id"))
-                    st.rerun()
                 except Exception:
                     # If code processing fails, continue to cookie check
                     pass
@@ -108,5 +106,5 @@ class Authenticate:
         st.session_state['logout'] = True
         st.session_state['name'] = None
         st.session_state['username'] = None
-        st.session_state['connected'] = False  # FIX: Should be False, not None
+        st.session_state['connected'] = False
         self.cookie_handler.delete_cookie()
