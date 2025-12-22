@@ -60,7 +60,8 @@ class CookieHandler:
         self.exp_date = self._set_exp_date()
         token = self._token_encode(name, email, picture, oauth_id)
         self.cookie_manager.set(self.cookie_name, token,
-                                expires_at=datetime.now() + timedelta(days=self.cookie_expiry_days))
+                                expires_at=datetime.now() + timedelta(days=self.cookie_expiry_days),
+                                path='/')
         
     def _set_exp_date(self) -> str:
         """
